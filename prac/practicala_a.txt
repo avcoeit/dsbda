@@ -1,0 +1,360 @@
+# facebook_metrics_operations.py
+
+import pandas as pd
+import numpy as np
+
+# --------------------------------------------------
+# Load Facebook Metrics Dataset
+# --------------------------------------------------
+# Make sure the CSV file is in the same directory
+df = pd.read_csv(
+    'facebook_metrics.csv',
+    sep=';'
+)
+
+print("Original Dataset:")
+print(df.head())
+print("-" * 50)
+
+# --------------------------------------------------
+# a. Create Data Subset
+# --------------------------------------------------
+# Column subset
+subset = df[["Type", "Post Hour", "Lifetime Post Total Reach"]]
+
+print("Data Subset (Selected Columns):")
+print(subset.head())
+print("-" * 50)
+
+# --------------------------------------------------
+# b. Merge Data
+# --------------------------------------------------
+# Create another dataframe for merging
+extra_data = pd.DataFrame({
+    "Type": ["Photo", "Status", "Video", "Link"],
+    "Content Score": [80, 65, 90, 70]
+})
+
+merged_data = pd.merge(df, extra_data, on="Type", how="left")
+
+print("Merged Data:")
+print(merged_data.head())
+print("-" * 50)
+
+# --------------------------------------------------
+# c. Sort Data
+# --------------------------------------------------
+sorted_data = df.sort_values(
+    by="Lifetime Post Total Reach",
+    ascending=False
+)
+
+print("Sorted Data (by Lifetime Post Total Reach):")
+print(sorted_data.head())
+print("-" * 50)
+
+# --------------------------------------------------
+# d. Transpose Data
+# --------------------------------------------------
+transposed_data = df.head().T
+
+print("Transposed Data:")
+print(transposed_data)
+print("-" * 50)
+
+# --------------------------------------------------
+# e. Shape and Reshape Data
+# --------------------------------------------------
+# Shape
+print("Shape of Dataset:")
+print(df.shape)
+print("-" * 50)
+
+# Reshape using NumPy
+reach_array = np.array(df["Lifetime Post Total Reach"].head(6))
+reshaped_array = reach_array.reshape(2, 3)
+
+print("Reshaped Array (2x3):")
+print(reshaped_array)
+print("-" * 50)
+
+# Pivot (Reshape using pandas)
+pivot_data = df.pivot_table(
+    values="Lifetime Post Total Reach",
+    index="Type",
+    columns="Post Month",
+    aggfunc="mean"
+)
+
+print("Pivot Table:")
+print(pivot_data)
+print("-" * 50)
+
+print("All operations completed successfully.")
+
+
+
+
+Original Dataset:
+   Page total likes    Type  Category  Post Month  Post Weekday  Post Hour  \
+0            139441   Photo         2          12             4          3   
+1            139441  Status         2          12             3         10   
+2            139441   Photo         3          12             3          3   
+3            139441   Photo         2          12             2         10   
+4            139441   Photo         2          12             2          3   
+
+   Paid  Lifetime Post Total Reach  Lifetime Post Total Impressions  \
+0   0.0                       2752                             5091   
+1   0.0                      10460                            19057   
+2   0.0                       2413                             4373   
+3   1.0                      50128                            87991   
+4   0.0                       7244                            13594   
+
+   Lifetime Engaged Users  Lifetime Post Consumers  \
+0                     178                      109   
+1                    1457                     1361   
+2                     177                      113   
+3                    2211                      790   
+4                     671                      410   
+
+   Lifetime Post Consumptions  \
+0                         159   
+1                        1674   
+2                         154   
+3                        1119   
+4                         580   
+
+   Lifetime Post Impressions by people who have liked your Page  \
+0                                               3078              
+1                                              11710              
+2                                               2812              
+3                                              61027              
+4                                               6228              
+
+   Lifetime Post reach by people who like your Page  \
+0                                              1640   
+1                                              6112   
+2                                              1503   
+3                                             32048   
+4                                              3200   
+
+   Lifetime People who have liked your Page and engaged with your post  \
+0                                                119                     
+1                                               1108                     
+2                                                132                     
+3                                               1386                     
+4                                                396                     
+
+   comment    like  share  Total Interactions  
+0        4    79.0   17.0                 100  
+1        5   130.0   29.0                 164  
+2        0    66.0   14.0                  80  
+3       58  1572.0  147.0                1777  
+4       19   325.0   49.0                 393  
+--------------------------------------------------
+Data Subset (Selected Columns):
+     Type  Post Hour  Lifetime Post Total Reach
+0   Photo          3                       2752
+1  Status         10                      10460
+2   Photo          3                       2413
+3   Photo         10                      50128
+4   Photo          3                       7244
+--------------------------------------------------
+Merged Data:
+   Page total likes    Type  Category  Post Month  Post Weekday  Post Hour  \
+0            139441   Photo         2          12             4          3   
+1            139441  Status         2          12             3         10   
+2            139441   Photo         3          12             3          3   
+3            139441   Photo         2          12             2         10   
+4            139441   Photo         2          12             2          3   
+
+   Paid  Lifetime Post Total Reach  Lifetime Post Total Impressions  \
+0   0.0                       2752                             5091   
+1   0.0                      10460                            19057   
+2   0.0                       2413                             4373   
+3   1.0                      50128                            87991   
+4   0.0                       7244                            13594   
+
+   Lifetime Engaged Users  Lifetime Post Consumers  \
+0                     178                      109   
+1                    1457                     1361   
+2                     177                      113   
+3                    2211                      790   
+4                     671                      410   
+
+   Lifetime Post Consumptions  \
+0                         159   
+1                        1674   
+2                         154   
+3                        1119   
+4                         580   
+
+   Lifetime Post Impressions by people who have liked your Page  \
+0                                               3078              
+1                                              11710              
+2                                               2812              
+3                                              61027              
+4                                               6228              
+
+   Lifetime Post reach by people who like your Page  \
+0                                              1640   
+1                                              6112   
+2                                              1503   
+3                                             32048   
+4                                              3200   
+
+   Lifetime People who have liked your Page and engaged with your post  \
+0                                                119                     
+1                                               1108                     
+2                                                132                     
+3                                               1386                     
+4                                                396                     
+
+   comment    like  share  Total Interactions  Content Score  
+0        4    79.0   17.0                 100             80  
+1        5   130.0   29.0                 164             65  
+2        0    66.0   14.0                  80             80  
+3       58  1572.0  147.0                1777             80  
+4       19   325.0   49.0                 393             80  
+--------------------------------------------------
+Sorted Data (by Lifetime Post Total Reach):
+     Page total likes   Type  Category  Post Month  Post Weekday  Post Hour  \
+244            130791  Photo         2           7             3          5   
+464             92079  Photo         1           2             6         13   
+463             92186  Photo         3           2             7          2   
+277            126424  Video         1           6             2         13   
+380            111620  Photo         1           4             7         14   
+
+     Paid  Lifetime Post Total Reach  Lifetime Post Total Impressions  \
+244   1.0                     180480                           319133   
+464   0.0                     158208                           453213   
+463   1.0                     153536                           497910   
+277   0.0                     139008                           277100   
+380   0.0                     128064                           251269   
+
+     Lifetime Engaged Users  Lifetime Post Consumers  \
+244                    8072                     4010   
+464                    2482                     2319   
+463                    1713                     1633   
+277                    1779                     1643   
+380                    1539                     1408   
+
+     Lifetime Post Consumptions  \
+244                        6242   
+464                        3412   
+463                        2493   
+277                        2356   
+380                        2506   
+
+     Lifetime Post Impressions by people who have liked your Page  \
+244                                             108752              
+464                                              81938              
+463                                               8907              
+277                                             107502              
+380                                              84046              
+
+     Lifetime Post reach by people who like your Page  \
+244                                             51456   
+464                                             20608   
+463                                              5696   
+277                                             38720   
+380                                             32384   
+
+     Lifetime People who have liked your Page and engaged with your post  \
+244                                               3316                     
+464                                               1034                     
+463                                                593                     
+277                                               1008                     
+380                                                985                     
+
+     comment    like  share  Total Interactions  
+244      372  5172.0  790.0                6334  
+464        9   268.0   36.0                 313  
+463        8   134.0   34.0                 176  
+277       23   204.0   44.0                 271  
+380        8   186.0   18.0                 212  
+--------------------------------------------------
+Transposed Data:
+                                                         0       1       2  \
+Page total likes                                    139441  139441  139441   
+Type                                                 Photo  Status   Photo   
+Category                                                 2       2       3   
+Post Month                                              12      12      12   
+Post Weekday                                             4       3       3   
+Post Hour                                                3      10       3   
+Paid                                                   0.0     0.0     0.0   
+Lifetime Post Total Reach                             2752   10460    2413   
+Lifetime Post Total Impressions                       5091   19057    4373   
+Lifetime Engaged Users                                 178    1457     177   
+Lifetime Post Consumers                                109    1361     113   
+Lifetime Post Consumptions                             159    1674     154   
+Lifetime Post Impressions by people who have li...    3078   11710    2812   
+Lifetime Post reach by people who like your Page      1640    6112    1503   
+Lifetime People who have liked your Page and en...     119    1108     132   
+comment                                                  4       5       0   
+like                                                  79.0   130.0    66.0   
+share                                                 17.0    29.0    14.0   
+Total Interactions                                     100     164      80   
+
+                                                         3       4  
+Page total likes                                    139441  139441  
+Type                                                 Photo   Photo  
+Category                                                 2       2  
+Post Month                                              12      12  
+Post Weekday                                             2       2  
+Post Hour                                               10       3  
+Paid                                                   1.0     0.0  
+Lifetime Post Total Reach                            50128    7244  
+Lifetime Post Total Impressions                      87991   13594  
+Lifetime Engaged Users                                2211     671  
+Lifetime Post Consumers                                790     410  
+Lifetime Post Consumptions                            1119     580  
+Lifetime Post Impressions by people who have li...   61027    6228  
+Lifetime Post reach by people who like your Page     32048    3200  
+Lifetime People who have liked your Page and en...    1386     396  
+comment                                                 58      19  
+like                                                1572.0   325.0  
+share                                                147.0    49.0  
+Total Interactions                                    1777     393  
+--------------------------------------------------
+Shape of Dataset:
+(500, 19)
+--------------------------------------------------
+Reshaped Array (2x3):
+[[ 2752 10460  2413]
+ [50128  7244 10472]]
+--------------------------------------------------
+Pivot Table:
+Post Month            1        2             3             4             5   \
+Type                                                                          
+Link        23906.500000   9356.0   5179.666667  46821.333333  12540.000000   
+Photo       10155.809524  24214.8  14064.937500  16834.434783  10285.212121   
+Status               NaN      NaN   9120.000000  17912.000000  14405.333333   
+Video                NaN      NaN           NaN           NaN           NaN   
+
+Post Month             6             7             8             9   \
+Type                                                                  
+Link                  NaN           NaN           NaN           NaN   
+Photo        14350.195652  20391.863636  11956.833333   6363.645161   
+Status       10336.000000  14074.285714  13022.000000  13673.000000   
+Video       139008.000000  21872.000000           NaN  30624.000000   
+
+Post Month            10            11            12  
+Type                                                  
+Link        25757.333333  21176.000000   6001.333333  
+Photo        8143.367347  11527.184211   8509.870968  
+Status      14448.500000   8158.666667  12688.833333  
+Video                NaN  43576.000000  36208.000000  
+--------------------------------------------------
+All operations completed successfully.
+
+
+
+
+
+
+
+
+
+
+
