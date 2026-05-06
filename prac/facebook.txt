@@ -1,0 +1,94 @@
+# Import pandas library for handling datasets and tables
+import pandas as pd
+
+# Import numpy library for numerical and array operations
+import numpy as np
+
+# Load the Facebook dataset from CSV file
+# sep=';' means values are separated by semicolon
+df = pd.read_csv("dataset_Facebook.csv", sep=';')
+
+# -----------------------------
+# a. Create Data Subset
+# -----------------------------
+
+# Select only required columns from dataset
+subset = df[["Type", "Post Hour", "Lifetime Post Total Reach"]]
+
+# Print heading
+print("Subset Data:")
+
+# Display first 5 rows of subset data
+print(subset.head())
+
+# -----------------------------
+# b. Merge Data
+# -----------------------------
+
+# Create a new dataframe named extra
+extra = pd.DataFrame({
+
+    # Type column
+    "Type": ["Photo", "Status", "Video", "Link"],
+
+    # Score column
+    "Score": [80, 70, 90, 75]
+})
+
+# Merge original dataframe with extra dataframe using Type column
+merged = pd.merge(df, extra, on="Type")
+
+# Print heading
+print("\nMerged Data:")
+
+# Display Type and Score columns
+print(merged[["Type", "Score"]].head())
+
+# -----------------------------
+# c. Sort Data
+# -----------------------------
+
+# Sort dataset based on Lifetime Post Total Reach
+# ascending=False means descending order
+sorted_data = df.sort_values(
+    by="Lifetime Post Total Reach",
+    ascending=False
+)
+
+# Print heading
+print("\nSorted Data:")
+
+# Display sorted data
+print(sorted_data[["Type", "Lifetime Post Total Reach"]].head())
+
+# -----------------------------
+# d. Transposing Data
+# -----------------------------
+
+# Print heading
+print("\nTransposed Data:")
+
+# Convert rows into columns and columns into rows
+print(df.head().T)
+
+# -----------------------------
+# e. Shape and Reshape Data
+# -----------------------------
+
+# Print heading
+print("\nShape of Dataset:")
+
+# Display number of rows and columns
+print(df.shape)
+
+# Convert first 6 values into numpy array
+arr = np.array(df["Lifetime Post Total Reach"].head(6))
+
+# Reshape array into 2 rows and 3 columns
+reshaped = arr.reshape(2, 3)
+
+# Print heading
+print("\nReshaped Array:")
+
+# Display reshaped array
+print(reshaped)

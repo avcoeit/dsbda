@@ -1,0 +1,181 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+
+# Load Datasets
+air = pd.read_csv("AirQuality.csv", sep=';')
+heart = pd.read_csv("heart disease.csv")
+
+print("Original Air Quality Dataset:")
+print(air.head())
+
+print("\nOriginal Heart Disease Dataset:")
+print(heart.head())
+
+# (a) Data Cleaning
+
+# Remove duplicate rows
+air.drop_duplicates(inplace=True)
+heart.drop_duplicates(inplace=True)
+
+# Remove empty columns
+air.dropna(axis=1, how='all', inplace=True)
+heart.dropna(axis=1, how='all', inplace=True)
+
+# Fill missing values with mean
+air.fillna(air.mean(numeric_only=True), inplace=True)
+heart.fillna(heart.mean(numeric_only=True), inplace=True)
+
+print("\nAfter Data Cleaning - Air Dataset:")
+print(air.head())
+
+print("\nAfter Data Cleaning - Heart Dataset:")
+print(heart.head())
+
+# (b) Data Integration
+
+# Add common column
+air["city"] = "Mumbai"
+heart["city"] = "Mumbai"
+
+# Merge datasets
+data = pd.merge(air, heart, on="city", how="left")
+
+print("\nAfter Data Integration:")
+print(data.head())
+
+# (c) Data Transformation
+
+# Select numeric columns
+num_cols = data.select_dtypes(include=np.number).columns
+
+# Normalize data
+scaler = MinMaxScaler()
+data[num_cols] = scaler.fit_transform(data[num_cols])
+
+print("\nAfter Normalization:")
+print(data[num_cols].head())
+
+# Convert categorical data into numeric
+data = pd.get_dummies(data, drop_first=True)
+
+print("\nAfter Encoding:")
+print(data.head())
+
+# Create pollution index
+if {"CO(GT)", "NOx(GT)", "NO2(GT)"}.issubset(data.columns):
+    data["pollution_index"] = (
+        data["CO(GT)"] +
+        data["NOx(GT)"] +
+        data["NO2(GT)"]
+    ) / 3
+
+    print("\nPollution Index Added:")
+    print(data[["pollution_index"]].head())
+
+# (d) Error Correcting
+
+# Remove invalid age values
+if "age" in data.columns:
+    data = data[data["age"] > 0]
+
+# Fix cholesterol values
+if "chol" in data.columns:
+    data["chol"] = data["chol"].clip(0.25, 0.75)
+
+print("\nAfter Error Correction:")
+print(data.head())
+
+# Remove outliers using IQR
+num_cols = data.select_dtypes(include=np.number).columns
+
+Q1 = data[num_cols].quantile(0.25)
+Q3 = data[num_cols].quantile(0.75)
+
+IQR = Q3 - Q1
+
+data = data[
+    ~((data[num_cols] < (Q1 - 1.5 * IQR)) |
+      (data[num_cols] > (Q3 + 1.5 * IQR))).any(axis=1)
+]
+
+print("\nAfter Removing Outliers:")
+print(data.head())
+
+# Final Output
+print("\nFinal Dataset Shape:")
+print(data.shape)
+
+print("\nFinal Dataset:")
+print(data.head())
+
+
+
+
+# import pandas as pd
+# Imports pandas library for handling datasets.
+
+# import numpy as np
+# Imports numpy library for numerical operations.
+
+# from sklearn.preprocessing import MinMaxScaler
+# Imports MinMaxScaler for normalization.
+
+# pd.read_csv()
+# Reads CSV files and loads them into dataframes.
+
+# print(head())
+# Displays first 5 rows of dataset.
+
+# drop_duplicates(inplace=True)
+# Removes duplicate rows from dataset.
+
+# dropna(axis=1, how='all')
+# Removes columns where all values are missing.
+
+# fillna(mean)
+# Fills missing numeric values using mean.
+
+# air["city"] = "Mumbai"
+# Adds city column for merging datasets.
+
+# pd.merge()
+# Combines both datasets using common column.
+
+# select_dtypes(include=np.number)
+# Selects numeric columns only.
+
+# MinMaxScaler()
+# Scales values between 0 and 1.
+
+# fit_transform()
+# Applies normalization on numeric data.
+
+# pd.get_dummies()
+# Converts categorical data into numeric format.
+
+# pollution_index
+# Creates new feature using average pollution values.
+
+# data[data["age"] > 0]
+# Removes invalid age values.
+
+# clip(0.25, 0.75)
+# Limits cholesterol values within range.
+
+# quantile(0.25)
+# Finds first quartile.
+
+# quantile(0.75)
+# Finds third quartile.
+
+# IQR = Q3 - Q1
+# Calculates Inter Quartile Range.
+
+# Removes outliers using IQR method.
+
+# data.shape
+# Displays number of rows and columns.
+
+# print(data.head())
+# Displays first 5 rows of final dataset.

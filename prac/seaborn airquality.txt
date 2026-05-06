@@ -1,0 +1,91 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load dataset
+df = pd.read_csv("AirQuality.csv", sep=';')
+
+# Rename columns
+df.rename(columns={
+    'T': 'Temperature',
+    'RH': 'Relative_Humidity',
+    'AH': 'Absolute_Humidity'
+}, inplace=True)
+
+# Remove extra columns
+df.drop(['Unnamed: 15', 'Unnamed: 16'],
+        axis=1,
+        inplace=True,
+        errors='ignore')
+
+# Convert values to float
+cols = ['CO(GT)', 'C6H6(GT)',
+        'Temperature',
+        'Relative_Humidity',
+        'Absolute_Humidity']
+
+for col in cols:
+    df[col] = pd.to_numeric(
+        df[col].astype(str).str.replace(',', '.'),
+        errors='coerce'
+    )
+
+# Handle missing values
+df = df.drop_duplicates()
+df.fillna(df.mean(numeric_only=True), inplace=True)
+
+# Convert date
+df['Date'] = pd.to_datetime(
+    df['Date'],
+    format='%d/%m/%Y',
+    errors='coerce'
+)
+
+df['Month'] = df['Date'].dt.month
+df['Year'] = df['Date'].dt.year
+
+# Heatmap
+plt.figure(figsize=(8,6))
+sns.heatmap(df.corr(numeric_only=True),
+            annot=True,
+            cmap='coolwarm')
+plt.title("Correlation Heatmap")
+plt.show()
+
+# Line Plot
+sns.lineplot(data=df,
+             x='Month',
+             y='Temperature')
+plt.title("Temperature by Month")
+plt.show()
+
+# Bar Plot
+sns.barplot(data=df,
+            x='Month',
+            y='CO(GT)')
+plt.title("CO(GT) by Month")
+plt.show()
+
+# Scatter Plot
+sns.scatterplot(data=df,
+                x='PT08.S1(CO)',
+                y='PT08.S5(O3)',
+                hue='Year')
+plt.title("CO vs O3")
+plt.show()
+
+# Pie Chart
+df['CO(GT)'].value_counts().head().plot.pie(
+    autopct='%1.1f%%'
+)
+plt.title("CO Distribution")
+plt.ylabel("")
+plt.show()
+
+# Histogram
+sns.histplot(df['Temperature'],
+             bins=20,
+             kde=True,
+             color='red')
+plt.title("Temperature Distribution")
+plt.show()
