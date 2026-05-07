@@ -1,75 +1,64 @@
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# Line Plot
-a = [1,2,3,4,5,6,5,4,3,2,1]
-b = [10,20,30,40,50,60,50,40,30,20,10]
-
-plt.plot(a,b)
-plt.xlabel('X axis')
-plt.ylabel('Y axis')
-plt.title('Line Graph')
-plt.show()
-
-# Simple Graph
-x = [1,2,3]
-y = [4,5,1]
-
-plt.plot(x,y)
-plt.title("Simple Plot")
-plt.show()
-
-
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Load dataset
-heart = pd.read_csv("heart disease.csv")
-
-# Print column names
-print(heart.columns)
-
-# Create target column
-if 'num' in heart.columns:
-    heart['target'] = heart['num'].apply(lambda x: 0 if x == 0 else 1)
 
 sns.set_style("whitegrid")
 
-# Heatmap
-plt.figure(figsize=(10,6))
-sns.heatmap(heart.corr(numeric_only=True), annot=True, cmap='coolwarm')
-plt.title("Correlation Heatmap")
+# ==================================================
+# 🔵 MATPLOTLIB GRAPHS
+# ==================================================
+
+# 1. Line Graph
+x = [1, 2, 3, 4, 5]
+y = [2, 4, 6, 8, 10]
+
+plt.figure()
+plt.plot(x, y)
+plt.title("Matplotlib Line Graph")
 plt.show()
 
-# Countplot
-if 'target' in heart.columns:
-    sns.countplot(x='target', data=heart)
-    plt.title("Heart Disease Count")
-    plt.xlabel("0 = No Disease , 1 = Disease")
-    plt.ylabel("Count")
-    plt.show()
+# 2. Bar Chart (Matplotlib)
+labels = ["A", "B", "C"]
+values = [10, 25, 15]
 
-# Age Distribution
-if 'age' in heart.columns:
-    plt.figure(figsize=(8,5))
-    sns.histplot(heart['age'], bins=20, kde=True)
-    plt.title("Age Distribution")
-    plt.xlabel("Age")
-    plt.ylabel("Frequency")
-    plt.show()
+plt.figure()
+plt.bar(labels, values, color="blue")
+plt.title("Matplotlib Bar Chart")
+plt.show()
 
-# Chest Pain vs Disease
-if 'cp' in heart.columns and 'target' in heart.columns:
-    sns.countplot(x='cp', hue='target', data=heart)
-    plt.title("Chest Pain vs Heart Disease")
-    plt.show()
+# 3. Pie Chart
+sizes = [40, 30, 30]
+labels = ["Python", "Java", "C++"]
 
-# Pairplot
-pair_columns = ['age', 'trestbps', 'chol']
+plt.figure()
+plt.pie(sizes, labels=labels, autopct="%1.1f%%")
+plt.title("Matplotlib Pie Chart")
+plt.show()
 
+# ==================================================
+# 🟢 SEABORN GRAPHS
+# ==================================================
 
+# 4. Count Plot
+data = [1, 2, 2, 3, 3, 3, 4]
 
-sns.pairplot(heart, hue='target', vars=pair_columns)
+plt.figure()
+sns.countplot(x=data)
+plt.title("Seaborn Count Plot")
+plt.show()
+
+# 5. Histogram
+ages = [18, 20, 22, 22, 25, 25, 30, 35]
+
+plt.figure()
+sns.histplot(ages, bins=5, kde=True)
+plt.title("Seaborn Histogram")
+plt.show()
+
+# 6. Bar Chart (Seaborn)
+categories = ["A", "B", "C"]
+values = [10, 25, 15]
+
+plt.figure()
+sns.barplot(x=categories, y=values)
+plt.title("Seaborn Bar Chart")
 plt.show()
