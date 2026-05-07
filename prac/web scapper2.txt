@@ -1,0 +1,138 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+import pandas as pd
+import os
+import time
+
+# ── 1. Launch Browser ──────────────────────────────────────────
+options = webdriver.ChromeOptions()
+options.add_argument("--start-maximized")
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+driver.get("https://www.flipkart.com")
+time.sleep(3)
+
+# ── 2. Close Popup ─────────────────────────────────────────────
+try:
+    WebDriverWait(driver, 5).until(
+        EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'✕')]"))
+    ).click()
+    print("✅ Popup closed")
+except:
+    print("ℹ️  No popup")
+
+# ── 3. Search Product ──────────────────────────────────────────
+search = driver.find_element(By.NAME, "q")
+search.send_keys("iphone 13")
+search.submit()
+time.sleep(3)
+
+# ── 4. Click First Product ─────────────────────────────────────
+driver.find_element(By.XPATH, "//a[contains(@href,'/p/')]").click()
+time.sleep(2)
+driver.switch_to.window(driver.window_handles[-1])
+time.sleep(4)
+
+# ── 5. Scroll & Click All Reviews ──────────────────────────────
+driver.execute_script("window.scrollTo(0, 2500);")
+time.sleep(2)
+
+try:
+    btn = WebDriverWait(driver, 5).until(
+        EC.element_to_be_clickable((By.XPATH,
+            "//*[contains(text(),'All Reviews') or contains(text(),'all reviews')]"))
+    )
+    btn.click()
+    time.sleep(3)
+    driver.switch_to.window(driver.window_handles[-1])
+    print("✅ Opened All Reviews page")
+except:
+    print("ℹ️  Scraping from product page")
+
+time.sleep(2)
+driver.execute_script("window.scrollTo(0, 1000);")
+time.sleep(2)
+
+# ── 6. Scrape Function ─────────────────────────────────────────
+def scrape_page(driver):
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    results = []
+
+    rating_els = soup.find_all(['div', 'span'],
+                    string=lambda t: t and t.strip() in ['1','2','3','4','5'])
+
+    for rel in rating_els:
+        try:
+            block = rel
+            for _ in range(8):
+                block = block.find_parent()
+                if len(block.get_text(strip=True)) > 80:
+                    break
+
+            all_texts = [t.get_text(strip=True)
+                         for t in block.find_all(['p','span','div'])
+                         if t.get_text(strip=True)]
+            all_texts = [t for t in all_texts if len(t) > 1]
+
+            rating  = rel.get_text(strip=True)
+            name    = next((t for t in all_texts if 2 < len(t) < 25
+                            and not t.isdigit() and t != rating), "N/A")
+            title   = next((t for t in all_texts if 10 < len(t) < 100
+                            and t != name and t != rating), "N/A")
+            comment = next((t for t in all_texts if len(t) > 60
+                            and t != name and t != title), "N/A")
+
+            if name != "N/A" or comment != "N/A":
+                results.append({
+                    "Customer Name": name,
+                    "Rating":        rating,
+                    "Review Title":  title,
+                    "Comment":       comment[:300]
+                })
+        except:
+            continue
+    return results
+
+# ── 7. Scrape Multiple Pages ───────────────────────────────────
+all_data = []
+for page in range(1, 6):
+    print(f"📄 Scraping page {page}...")
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)
+
+    reviews = scrape_page(driver)
+    print(f"   -> Found {len(reviews)} reviews")
+    all_data.extend(reviews)
+
+    try:
+        next_btn = driver.find_element(By.XPATH,
+            "//span[contains(text(),'Next')] | //a[contains(text(),'Next')]")
+        next_btn.click()
+        time.sleep(3)
+    except:
+        print("   No more pages")
+        break
+
+driver.quit()
+
+# ── 8. Save to CSV ─────────────────────────────────────────────
+if all_data:
+    df = pd.DataFrame(all_data).drop_duplicates()
+
+    # Saves in same folder as this script - always works
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_path  = os.path.join(script_dir, "flipkart_reviews.csv")
+
+    df.to_csv(save_path, index=False)
+
+    print(f"\n✅ Done! {len(df)} reviews saved!")
+    print(f"📁 File saved at: {save_path}")
+    print("\n--- Preview ---")
+    print(df.to_string(index=False))
+else:
+    print("❌ No reviews found")
