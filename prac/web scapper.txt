@@ -1,0 +1,106 @@
+import requests
+from bs4 import BeautifulSoup
+
+# -------------------------------
+# STEP 1: Define the URL
+# -------------------------------
+url = "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+
+# -------------------------------
+# STEP 2: Send HTTP request
+# -------------------------------
+response = requests.get(url)
+
+# Check if request is successful
+if response.status_code != 200:
+    print("Failed to retrieve page")
+    exit()
+
+# -------------------------------
+# STEP 3: Parse HTML content
+# -------------------------------
+soup = BeautifulSoup(response.content, "html.parser")
+
+# -------------------------------
+# STEP 4: Extract Book Title
+# -------------------------------
+title = soup.find("h1").text.strip()
+
+# -------------------------------
+# STEP 5: Extract Price
+# -------------------------------
+price = soup.find("p", class_="price_color").text.strip()
+
+# -------------------------------
+# STEP 6: Extract Availability
+# -------------------------------
+availability = soup.find("p", class_="instock availability").text.strip()
+
+# -------------------------------
+# STEP 7: Extract Rating (Text)
+# Example: 'Three', 'Four'
+# -------------------------------
+rating_class = soup.find("p", class_="star-rating")["class"][1]
+
+# Convert rating text → numeric value
+rating_map = {
+    "One": 1,
+    "Two": 2,
+    "Three": 3,
+    "Four": 4,
+    "Five": 5
+}
+
+rating = rating_map.get(rating_class, 0)
+
+# -------------------------------
+# STEP 8: Extract Description
+# (Used as Comment)
+# -------------------------------
+description_section = soup.find("div", id="product_description")
+
+if description_section:
+    description = description_section.find_next_sibling("p").text.strip()
+else:
+    description = "No description available"
+
+# -------------------------------
+# STEP 9: Extract Category (Tag)
+# -------------------------------
+breadcrumb = soup.find("ul", class_="breadcrumb").find_all("li")
+category = breadcrumb[2].text.strip()
+
+# -------------------------------
+# STEP 10: Reviews & Customer Name
+# (Not available on this website)
+# -------------------------------
+reviews = "No reviews available"
+customer_name = "N/A"
+
+# -------------------------------
+# STEP 11: Store Data
+# -------------------------------
+data = {
+    "title": title,
+    "price": price,
+    "availability": availability,
+    "rating": rating,
+    "description": description,      # Comment
+    "category": category,            # Tag
+    "reviews": reviews,
+    "customer_name": customer_name
+}
+
+# -------------------------------
+# STEP 12: Display Output
+# -------------------------------
+print("\n📘 Book Details")
+print("---------------------------")
+print("Title:", data["title"])
+print("Price:", data["price"])
+print("Availability:", data["availability"])
+print("Rating:", data["rating"])
+print("Category:", data["category"])
+print("Description:", data["description"])
+print("Reviews:", data["reviews"])
+print("Customer Name:", data["customer_name"])
