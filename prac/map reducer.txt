@@ -1,0 +1,161 @@
+============================================================
+PRACTICAL 1 – MapReduce Log Analysis (Ubuntu, No Hadoop)
+============================================================
+
+STEP 1 — Create Project Folder
+------------------------------------------------------------
+mkdir -p MapReduce_Practical
+cd MapReduce_Practical
+
+
+STEP 2 — Create Input Log File
+------------------------------------------------------------
+Command:
+cat > sample_log.txt
+
+Data:
+user1 LOGIN 2024-01-01 08:00:00
+user1 LOGOUT 2024-01-01 10:30:00
+user2 LOGIN 2024-01-01 09:00:00
+user2 LOGOUT 2024-01-01 12:00:00
+user3 LOGIN 2024-01-01 07:00:00
+user3 LOGOUT 2024-01-01 11:00:00
+user1 LOGIN 2024-01-01 13:00:00
+user1 LOGOUT 2024-01-01 15:00:00
+user2 LOGIN 2024-01-01 14:00:00
+user2 LOGOUT 2024-01-01 16:30:00
+user4 LOGIN 2024-01-01 06:00:00
+user4 LOGOUT 2024-01-01 14:00:00
+
+Save: CTRL + D
+
+
+STEP 3 — Create mapper.py
+------------------------------------------------------------
+Command:
+nano mapper.py
+
+Code:
+#!/usr/bin/env python3
+
+import sys
+from datetime import datetime
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+
+    parts = line.split()
+    if len(parts) < 4:
+        continue
+
+    username = parts[0]
+    action = parts[1].upper()
+    date_time = parts[2] + " " + parts[3]
+
+    try:
+        ts = datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S").timestamp()
+        print(f"{username}\t{action}\t{int(ts)}")
+    except ValueError:
+        continue
+
+Save: CTRL + X → Y → ENTER
+
+
+STEP 4 — Create reducer.py
+------------------------------------------------------------
+Command:
+nano reducer.py
+
+Code:
+#!/usr/bin/env python3
+
+import sys
+
+login_times = {}
+durations = {}
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+
+    parts = line.split("\t")
+    if len(parts) != 3:
+        continue
+
+    username = parts[0]
+    action = parts[1]
+    timestamp = int(parts[2])
+
+    if action == "LOGIN":
+        login_times[username] = timestamp
+
+    elif action == "LOGOUT":
+        if username in login_times:
+            duration = timestamp - login_times[username]
+            durations[username] = durations.get(username, 0) + duration
+            del login_times[username]
+
+print("\nLOGIN DURATION REPORT\n")
+
+for user, secs in durations.items():
+    hours = secs // 3600
+    minutes = (secs % 3600) // 60
+    print(f"{user} -> {hours}h {minutes}m")
+
+max_user = max(durations, key=durations.get)
+
+print(f"\nMAX LOGIN USER: {max_user}")
+
+
+Save: CTRL + X → Y → ENTER
+
+
+STEP 5 — Give Permission
+------------------------------------------------------------
+chmod +x mapper.py reducer.py
+
+
+STEP 6 — Check Files
+------------------------------------------------------------
+ls
+
+
+STEP 7 — Run Mapper Only
+------------------------------------------------------------
+cat sample_log.txt | python3 mapper.py
+
+
+STEP 8 — Run Sorted Output
+------------------------------------------------------------
+cat sample_log.txt | python3 mapper.py | sort -k1,1 -k3,3n
+
+
+STEP 9 — Run Complete MapReduce
+------------------------------------------------------------
+cat sample_log.txt | python3 mapper.py | sort -k1,1 -k3,3n | python3 reducer.py
+
+
+FINAL OUTPUT
+------------------------------------------------------------
+LOGIN DURATION REPORT
+
+user1 -> 4h 30m
+user2 -> 5h 30m
+user3 -> 4h 0m
+user4 -> 8h 0m
+
+MAX LOGIN USER: user4
+
+
+FILES CREATED
+------------------------------------------------------------
+sample_log.txt
+mapper.py
+reducer.py
+
+============================================================
+END OF PRACTICAL
+============================================================
