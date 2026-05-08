@@ -1,106 +1,122 @@
+from flask import Flask, request, render_template_string
 import requests
 from bs4 import BeautifulSoup
 
-# -------------------------------
-# STEP 1: Define the URL
-# -------------------------------
-url = "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+app = Flask(__name__)
 
-# -------------------------------
-# STEP 2: Send HTTP request
-# -------------------------------
-response = requests.get(url)
+# ---------------- HTML TEMPLATES ----------------
 
-# Check if request is successful
-if response.status_code != 200:
-    print("Failed to retrieve page")
-    exit()
+INDEX_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Scraper</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f2f2f2;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input {
+            width: 300px;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
 
-# -------------------------------
-# STEP 3: Parse HTML content
-# -------------------------------
-soup = BeautifulSoup(response.content, "html.parser")
+<h1>Web Scraper Working ✅</h1>
 
-# -------------------------------
-# STEP 4: Extract Book Title
-# -------------------------------
-title = soup.find("h1").text.strip()
+<form method="POST">
+    <input type="text" name="content" placeholder="Enter product name" required>
+    <br><br>
+    <button type="submit">Search</button>
+</form>
 
-# -------------------------------
-# STEP 5: Extract Price
-# -------------------------------
-price = soup.find("p", class_="price_color").text.strip()
+</body>
+</html>
+"""
 
-# -------------------------------
-# STEP 6: Extract Availability
-# -------------------------------
-availability = soup.find("p", class_="instock availability").text.strip()
+RESULT_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reviews</title>
+</head>
+<body>
 
-# -------------------------------
-# STEP 7: Extract Rating (Text)
-# Example: 'Three', 'Four'
-# -------------------------------
-rating_class = soup.find("p", class_="star-rating")["class"][1]
+<h1>Amazon Reviews</h1>
 
-# Convert rating text → numeric value
-rating_map = {
-    "One": 1,
-    "Two": 2,
-    "Three": 3,
-    "Four": 4,
-    "Five": 5
-}
+{% for r in reviews %}
+<div style="border:1px solid black; margin:10px; padding:10px;">
+    <p><b>Name:</b> {{r.Name}}</p>
+    <p><b>Rating:</b> {{r.Rating}}</p>
+    <p><b>Title:</b> {{r.CommentHead}}</p>
+    <p><b>Comment:</b> {{r.Comment}}</p>
+</div>
+{% endfor %}
 
-rating = rating_map.get(rating_class, 0)
+<br>
+<a href="/">Search Again</a>
 
-# -------------------------------
-# STEP 8: Extract Description
-# (Used as Comment)
-# -------------------------------
-description_section = soup.find("div", id="product_description")
+</body>
+</html>
+"""
 
-if description_section:
-    description = description_section.find_next_sibling("p").text.strip()
-else:
-    description = "No description available"
+# ---------------- FLASK APP ----------------
 
-# -------------------------------
-# STEP 9: Extract Category (Tag)
-# -------------------------------
-breadcrumb = soup.find("ul", class_="breadcrumb").find_all("li")
-category = breadcrumb[2].text.strip()
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        search = request.form.get("content")
 
-# -------------------------------
-# STEP 10: Reviews & Customer Name
-# (Not available on this website)
-# -------------------------------
-reviews = "No reviews available"
-customer_name = "N/A"
+        url = f"https://www.amazon.in/s?k={search}"
 
-# -------------------------------
-# STEP 11: Store Data
-# -------------------------------
-data = {
-    "title": title,
-    "price": price,
-    "availability": availability,
-    "rating": rating,
-    "description": description,      # Comment
-    "category": category,            # Tag
-    "reviews": reviews,
-    "customer_name": customer_name
-}
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
 
-# -------------------------------
-# STEP 12: Display Output
-# -------------------------------
-print("\n📘 Book Details")
-print("---------------------------")
-print("Title:", data["title"])
-print("Price:", data["price"])
-print("Availability:", data["availability"])
-print("Rating:", data["rating"])
-print("Category:", data["category"])
-print("Description:", data["description"])
-print("Reviews:", data["reviews"])
-print("Customer Name:", data["customer_name"])
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        links = soup.find_all("a", {"class": "a-link-normal s-no-outline"})
+
+        if not links:
+            return "No products found or Amazon blocked request"
+
+        product_link = "https://www.amazon.in" + links[0]["href"]
+
+        prod_page = requests.get(product_link, headers=headers)
+        prod_soup = BeautifulSoup(prod_page.content, "html.parser")
+
+        reviews = []
+
+        review_blocks = prod_soup.find_all("div", {"data-hook": "review"})
+
+        if not review_blocks:
+            return "No reviews found"
+
+        for r in review_blocks:
+            reviews.append({
+                "Name": r.find("span", {"class": "a-profile-name"}).text if r.find("span", {"class": "a-profile-name"}) else "N/A",
+                "Rating": r.find("i", {"data-hook": "review-star-rating"}).text if r.find("i", {"data-hook": "review-star-rating"}) else "N/A",
+                "CommentHead": r.find("a", {"data-hook": "review-title"}).text.strip() if r.find("a", {"data-hook": "review-title"}) else "N/A",
+                "Comment": r.find("span", {"data-hook": "review-body"}).text.strip() if r.find("span", {"data-hook": "review-body"}) else "N/A"
+            })
+
+        return render_template_string(RESULT_HTML, reviews=reviews)
+
+    return render_template_string(INDEX_HTML)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
